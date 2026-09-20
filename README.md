@@ -91,30 +91,13 @@ Session report
 
 ## Example: generate and analyze 50 sample sessions
 
-```python
-from sample_data import available_scenarios, generate_fitness_data
-from option_a_fitness.fitness_analyzer import FitnessSessionAnalyzer
-
-results = []
-
+```bash
+python3 -c "from sample_data import generate_fitness_data; from option_a_fitness.fitness_analyzer import FitnessSessionAnalyzer; results=[]; 
 for i in range(50):
-    profile, observations = generate_fitness_data(
-        participant_id=f"P{i:03d}",
-        scenario="random",
-        seed=i,
-        number_of_windows=12,
-    )
-
+    profile, observations = generate_fitness_data(participant_id=f'P{i:03d}', scenario='random', seed=i, number_of_windows=12)
     analyzer = FitnessSessionAnalyzer(profile, observations)
-    results.append({
-        "participant_id": profile["participant_id"],
-        "classification": analyzer.session_summary["classification"],
-        "valid_observations": analyzer.session_summary["valid_observations"],
-        "rejected_observations": analyzer.session_summary["rejected_observations"],
-    })
-
-print(f"Analyzed {len(results)} sessions")
-print(results[:5])
+    results.append({'participant_id': profile['participant_id'], 'classification': analyzer.session_summary['classification'], 'valid_observations': analyzer.session_summary['valid_observations'], 'rejected_observations': analyzer.session_summary['rejected_observations']})
+print(f'Analyzed {len(results)} sessions'); print(results[:5])"
 ```
 
 This pattern is useful when you want to generate a batch of sessions, analyze them quickly, and inspect how often each class occurs across many test samples.
