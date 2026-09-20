@@ -2,264 +2,98 @@
 
 Selected option: Option A - Smart Fitness Session Analyzer
 
-Student name: Mirjam Throndsen
-Student number: [Add student number here]
-
-GitHub repository: https://github.com/Mirri007/ACIT4420_Assignment_1
+Student name: Miriam Throndsen
+Student number: 409902
 
 ## Short description
 
-This application reads fitness measurement data for one participant, validates each observation window, compares every value against the participant's personal baseline, and classifies the complete session as resting, moderate activity, high activity, recovery, or poor quality.
-
-The generator supplies raw dictionaries and lists. The assignment requires us to turn those into domain objects, analyze the session, and explain the final classification clearly.
-
-## Repository structure
-
-```text
-student_repository/
-├── README.md
-├── main.py
-├── sample_data.py
-├── tests.py
-├── requirements.txt
-├── option_a_fitness/
-│   ├── data_generator.py
-│   ├── fitness_analyzer.py
-│   ├── fitness_runner.py
-│   └── test_fitness_analyzer.py
-└── option_b_podcast/   # removed from final assignment version
-```
-
-The final project should only include the chosen assignment option. This repository keeps the relevant fitness solution in the `option_a_fitness` directory and uses a root-level entry point for the instructor or evaluator.
+This application reads fitness measurement data for one participant, validates each observation window, compares the values with the participant's personal baseline, and classifies the full session as resting, moderate activity, high activity, recovery, or poor quality.
 
 ## Class design
 
 ### ParticipantProfile
-Responsible for storing the participant's reference measurements:
-
-- baseline heart rate
-- baseline skin response
-- baseline temperature
-
-These values represent the person's normal baseline and are used for comparison.
+Stores the participant's baseline measurements and provides the reference values used during comparison.
 
 ### FitnessObservation
-Represents one observation window. It stores:
-
-- timestamp
-- heart rate
-- skin response
-- temperature
-- activity level
-- signal quality
-- validation issues
-
-This object keeps the state for one measurement and makes it easy to validate and summarize.
+Represents one observation window and stores the relevant measurement values plus any validation issues for that reading.
 
 ### FitnessSessionAnalyzer
-Responsible for:
-
-- reading the raw data
-- validating each observation
-- separating valid and invalid readings
-- calculating summary statistics
-- comparing measurements to the participant baseline
-- classifying the full session
-- producing a report that explains the result
-
-This class composes the participant profile and all observations into one session evaluation.
+Loads the participant profile and observation data, validates each reading, calculates summary statistics, compares values against the baseline, and decides the final classification for the session.
 
 ## Where OOP principles are demonstrated
 
 ### Encapsulation
-Each class keeps its own state and exposes only the relevant behaviour. The participant baseline and the observation values are stored inside their own objects rather than as loose dictionaries.
+Each class keeps its own state and exposes only the behaviour needed for analysis and reporting.
 
 ### Composition
-The analyzer is built from a participant profile plus many observations. The session is therefore a structured combination of objects instead of a single unstructured dictionary.
+The analyzer is built using a participant profile together with many observation objects, which makes the session a structured combination of objects rather than a single loose dictionary.
 
 ### Inheritance
-This assignment does not require a deep inheritance hierarchy. The solution uses classes and composition to model the domain clearly and cleanly.
+This assignment does not require a deep inheritance hierarchy; the design instead focuses on clear class responsibilities and composition.
 
 ### Overriding
-No overriding is required for this assignment, because the data generator is a supplied implementation and the analysis logic is implemented in custom classes.
+No overriding is required for this assignment because the supplied data generator is not extended by subclasses in the solution.
 
 ## Assumptions and classification rules
 
-The program assumes:
+The application assumes that:
 
-- the baseline values represent the participant's normal resting behaviour
-- valid observations fall within realistic ranges for heart rate, temperature and activity
-- poor-quality data is rejected or flagged instead of being trusted in the final classification
+- the baseline values reflect a normal resting state for the participant;
+- valid observations stay within realistic ranges for heart rate, skin response, temperature, and activity;
+- poor-quality or invalid measurements are rejected instead of being trusted in the final classification.
 
-### Classification rules
+The classification rules are:
 
-- resting: activity and heart rate remain near the participant baseline
-- moderate activity: activity and heart rate are above baseline but not extreme
-- high activity: the session shows sustained high exertion
-- recovery: heart rate and activity decline toward the baseline near the end of the session
-- poor quality: too many observations are invalid or signal quality is too low
+- resting: activity and heart rate stay close to the participant baseline;
+- moderate activity: activity and heart rate rise above baseline but are not extreme;
+- high activity: the session shows sustained high exertion;
+- recovery: heart rate and activity decrease toward baseline near the end of the session;
+- poor quality: too many observations are invalid or the signal quality is too low.
 
 ## Installation and running instructions
 
-### Clone the repository
+1. Clone the repository:
 
 ```bash
-git clone https://github.com/USERNAME/REPOSITORY.git
-cd REPOSITORY
+git clone https://github.com/Mirri007/ACIT4420_Assignment_1.git
+cd ACIT4420_Assignment_1
 ```
 
-### Run the application from the repository root
+2. Run the application from the repository root:
 
 ```bash
 python3 main.py
 ```
 
-This root script starts the fitness program from the assignment-specific runner.
-
-If your system uses `python` instead of `python3`, use:
+If `python` is used instead of `python3`, run:
 
 ```bash
 python main.py
 ```
 
-### Run the tests
+3. Run the test suite:
 
 ```bash
 python3 -m unittest -v
 ```
 
-## How to use the generator and analyzer
-
-The project is designed to work in a simple, readable pattern:
-
-```python
-from option_a_fitness.data_generator import generate_fitness_data
-from option_a_fitness.fitness_analyzer import FitnessSessionAnalyzer
-
-profile, observations = generate_fitness_data(
-    participant_id="P001",
-    scenario="recovery",
-    seed=42,
-    number_of_windows=10,
-)
-
-analyzer = FitnessSessionAnalyzer(profile, observations)
-report = analyzer.generate_report()
-print(report)
-```
-
-This generates one realistic data set, passes it to the analyzer, and prints the classification and summary.
-
-## Generate and analyze many datasets
-
-You can also create a batch of examples, for example 100 generated sessions, and analyze each one in a loop:
-
-```python
-from option_a_fitness.data_generator import generate_fitness_data
-from option_a_fitness.fitness_analyzer import FitnessSessionAnalyzer
-
-results = []
-
-for i in range(100):
-    profile, observations = generate_fitness_data(
-        participant_id=f"P{i:03d}",
-        scenario="random",
-        seed=i,
-        number_of_windows=12,
-    )
-
-    analyzer = FitnessSessionAnalyzer(profile, observations)
-    results.append({
-        "participant_id": profile["participant_id"],
-        "classification": analyzer.session_summary["classification"],
-        "valid_observations": analyzer.session_summary["valid_observations"],
-        "rejected_observations": analyzer.session_summary["rejected_observations"],
-    })
-
-print(f"Analyzed {len(results)} sessions")
-print(results[:5])
-```
-
-This pattern is useful if you want to test many generated sessions, inspect how often each class appears, or quickly check whether the classification logic remains stable.
-
 ## Example output
 
-### Example 1: single dataset
-
-```python
-from option_a_fitness.data_generator import generate_fitness_data
-from option_a_fitness.fitness_analyzer import FitnessSessionAnalyzer
-
-profile, observations = generate_fitness_data(
-    participant_id="P001",
-    scenario="recovery",
-    seed=42,
-    number_of_windows=10,
-)
-
-analyzer = FitnessSessionAnalyzer(profile, observations)
-print(analyzer.generate_report())
-```
-
-Example result:
-
 ```text
-{'participant_id': 'P001',
- 'classification': 'recovery',
- 'valid_observations': 10,
- 'rejected_observations': 0,
- 'total_observations': 10,
- 'average_heart_rate': 112.8,
- 'classification_reason': 'heart rate and activity declined toward the participant baseline near the end of the session'}
+Available scenarios: ('resting', 'moderate_activity', 'high_activity', 'recovery', 'poor_quality')
+
+Participant profile
+{'participant_id': 'P001', 'baseline_heart_rate': 78, 'baseline_skin_response': 1.17, 'baseline_temperature': 32.76}
+
+Session report
+{'participant_id': 'P001', 'classification': 'recovery', 'valid_observations': 10, 'rejected_observations': 0, 'total_observations': 10, 'average_heart_rate': 112.8, 'classification_reason': 'heart rate and activity declined toward the participant baseline near the end of the session'}
 ```
-
-### Example 2: 200 generated datasets
-
-```python
-from collections import Counter
-from option_a_fitness.data_generator import generate_fitness_data
-from option_a_fitness.fitness_analyzer import FitnessSessionAnalyzer
-
-results = Counter()
-
-for i in range(200):
-    profile, observations = generate_fitness_data(
-        participant_id=f"P{i:03d}",
-        scenario="random",
-        seed=i,
-        number_of_windows=12,
-    )
-    analyzer = FitnessSessionAnalyzer(profile, observations)
-    results[analyzer.session_summary["classification"]] += 1
-
-print(results)
-```
-
-This prints something like:
-
-```text
-Counter({'moderate_activity': 78, 'resting': 35, 'recovery': 22, 'high_activity': 19, 'poor_quality': 46})
-```
-
-The exact numbers vary because the generator is random, but the pattern shows how you can evaluate many generated sessions quickly.
 
 ## Known limitations
 
-- This is designed for the structured exercise data produced by the generator and is not a medical monitoring system.
-- Recovery detection is based on the generated pattern and simplified rules, not a full physiological model.
-- No third-party packages are required; the project uses only the Python standard library.
-
-## GitHub repository and submission
-
-This project is published in the repository below and is ready for submission:
-
-- Repository URL: https://github.com/Mirri007/ACIT4420_Assignment_1
-- Branch: main
-- Final commit hash: use the latest commit hash from the repository history at the time of submission
-
-Create a public repository or a private repository that is accessible to the instructor. Submit both the repository URL and the final commit hash representing the final assessed version.
-
-## Required repository contents
+- The solution is designed for the structured exercise data generated by the assignment generator and is not a general medical monitoring system.
+- Recovery detection is based on simplified rules derived from the generated data pattern rather than a full physiological model.
+- The project uses only the Python standard library and has no third-party dependencies.
 
 The repository should contain the project files and may use a different structure if explained in the README. The final project structure for this submission is:
 
