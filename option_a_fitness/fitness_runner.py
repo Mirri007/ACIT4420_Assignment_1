@@ -1,10 +1,15 @@
-"""Example usage for the Smart Fitness Session Analyzer."""
+"""Example usage for the Smart Fitness Session Analyzer.
+
+This script demonstrates the normal workflow: generate a scenario, create an
+analyzer instance, and print a human-readable session report.
+"""
 
 from data_generator import available_scenarios, generate_fitness_data
 from fitness_analyzer import FitnessSessionAnalyzer
 
 
 def main():
+    # Show all supported scenarios before running the analysis.
     print("Available scenarios:", available_scenarios())
 
     profile, observations = generate_fitness_data(
@@ -17,10 +22,8 @@ def main():
     analyzer = FitnessSessionAnalyzer(profile, observations)
     print("\nParticipant profile")
     print(profile)
-    print("\nSession summary")
-    print(analyzer.session_summary)
-    print("\nRejected observations")
-    print(analyzer.rejected_observations)
+    print("\nSession report")
+    print(analyzer.generate_report())
 
 
 if __name__ == "__main__":

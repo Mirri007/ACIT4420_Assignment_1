@@ -1,4 +1,9 @@
-"""Domain objects and analysis for the Smart Fitness Session Analyzer."""
+"""Domain objects and analysis for the Smart Fitness Session Analyzer.
+
+This module models the participant and each measurement window, then evaluates
+whether the full session should be classified as resting, moderate activity,
+high activity, recovery or poor quality.
+"""
 
 from __future__ import annotations
 
@@ -6,6 +11,7 @@ from dataclasses import dataclass, field
 from statistics import mean
 
 
+# A participant has a personal baseline that all observations are compared against.
 @dataclass(frozen=True)
 class ParticipantProfile:
     participant_id: str
@@ -40,6 +46,8 @@ class ParticipantProfile:
         )
 
 
+# One measurement window from the session. The object stores the raw reading and
+# any validation problems so it can be accepted or rejected individually.
 @dataclass
 class FitnessObservation:
     timestamp: int
@@ -69,12 +77,17 @@ class FitnessObservation:
         return not self.issues
 
 
+# The analyzer is the main orchestration layer: it validates raw data,
+# builds the session summary, and decides the final activity classification.
 class FitnessSessionAnalyzer:
     """Validate one fitness session and infer the session type."""
 
     def __init__(self, profile, observations):
+        # Convert the raw profile dict into a domain object to keep the data model
+        # structured and type-safe.
         self.profile = ParticipantProfile.from_dict(profile)
         self.raw_observations = list(observations)
+        self.all_observations = []
         self.valid_observations = []
         self.rejected_observations = []
 
@@ -82,6 +95,7 @@ class FitnessSessionAnalyzer:
             observation = FitnessObservation.from_dict(raw_observation)
             issues = self._validate_observation(observation)
             observation.issues = issues
+            self.all_observations.append(observation)
             if issues:
                 self.rejected_observations.append(observation)
             else:
@@ -94,6 +108,8 @@ class FitnessSessionAnalyzer:
         return isinstance(value, (int, float)) and not isinstance(value, bool)
 
     def _validate_observation(self, observation):
+        # Each observation is checked against realistic ranges. If any field is
+        # missing, impossible or clearly unreliable, the observation is rejected.
         issues = []
 
         if not isinstance(observation.timestamp, int) or observation.timestamp < 0:
@@ -127,19 +143,35 @@ class FitnessSessionAnalyzer:
         return issues
 
     def _build_summary(self):
+        # Summaries combine the validated data and the participant's baseline so the
+        # final classification is traceable and explainable.
         total = len(self.raw_observations)
         rejected = len(self.rejected_observations)
+        checks = [
+            "timestamp valid",
+            "heart rate valid",
+            "skin response valid",
+            "temperature valid",
+            "activity level valid",
+            "signal quality valid",
+        ]
 
         if not self.valid_observations:
             return {
                 "participant_id": self.profile.participant_id,
                 "classification": "poor_quality",
+                "checks_performed": checks,
                 "valid_observations": 0,
                 "rejected_observations": rejected,
                 "total_observations": total,
                 "average_heart_rate": None,
+                "min_heart_rate": None,
+                "max_heart_rate": None,
                 "average_activity": None,
+                "min_activity": None,
+                "max_activity": None,
                 "average_signal_quality": None,
+                "classification_reason": "insufficient valid data for a reliable session classification",
             }
 
         valid_heart_rates = [obs.heart_rate for obs in self.valid_observations]
@@ -156,28 +188,41 @@ class FitnessSessionAnalyzer:
 
         if rejected > 0 and (rejected / total) >= 0.25:
             classification = "poor_quality"
+            reason = "too many observations were invalid or unreliable"
         elif average_signal_quality < 0.6:
             classification = "poor_quality"
+            reason = "signal quality was consistently too low"
         elif trend <= -12 and first_heart_rate >= self.profile.baseline_heart_rate + 10 and last_heart_rate <= self.profile.baseline_heart_rate + 8:
             classification = "recovery"
+            reason = "heart rate and activity declined toward the participant baseline near the end of the session"
         elif average_activity >= 0.68 and average_heart_rate >= self.profile.baseline_heart_rate + 35:
             classification = "high_activity"
+            reason = "average activity and heart rate indicate sustained high exertion"
         elif average_activity >= 0.35 or average_heart_rate >= self.profile.baseline_heart_rate + 15:
             classification = "moderate_activity"
+            reason = "movement and heart rate show moderate effort above resting baseline"
         elif average_activity <= 0.2 and average_heart_rate <= self.profile.baseline_heart_rate + 10:
             classification = "resting"
+            reason = "activity and heart rate remained close to resting baseline"
         else:
             classification = "moderate_activity"
+            reason = "measurements fit a mixed or transitional activity level"
 
         return {
             "participant_id": self.profile.participant_id,
             "classification": classification,
+            "checks_performed": checks,
             "valid_observations": len(self.valid_observations),
             "rejected_observations": rejected,
             "total_observations": total,
             "average_heart_rate": round(average_heart_rate, 2),
+            "min_heart_rate": min(valid_heart_rates),
+            "max_heart_rate": max(valid_heart_rates),
             "average_activity": round(average_activity, 2),
+            "min_activity": min(valid_activity),
+            "max_activity": max(valid_activity),
             "average_signal_quality": round(average_signal_quality, 2),
+            "classification_reason": reason,
         }
 
     def generate_report(self):
@@ -185,10 +230,18 @@ class FitnessSessionAnalyzer:
         summary["baseline_heart_rate"] = self.profile.baseline_heart_rate
         summary["baseline_skin_response"] = self.profile.baseline_skin_response
         summary["baseline_temperature"] = self.profile.baseline_temperature
+        summary["observation_status"] = [
+            {
+                "timestamp": obs.timestamp,
+                "status": "accepted" if not obs.issues else "rejected",
+                "reason": "all checks passed" if not obs.issues else ", ".join(obs.issues),
+            }
+            for obs in self.all_observations
+        ]
         summary["rejected_details"] = [
             {
                 "timestamp": obs.timestamp,
-                "issues": obs.issues,
+                "reason": ", ".join(obs.issues) if obs.issues else "no issue",
             }
             for obs in self.rejected_observations
         ]
