@@ -5,6 +5,8 @@ Selected option: Option A - Smart Fitness Session Analyzer
 Student name: Mirjam Throndsen
 Student number: [Add student number here]
 
+GitHub repository: https://github.com/Mirri007/ACIT4420_Assignment_1
+
 ## Short description
 
 This application reads fitness measurement data for one participant, validates each observation window, compares every value against the participant's personal baseline, and classifies the complete session as resting, moderate activity, high activity, recovery, or poor quality.
@@ -249,24 +251,57 @@ The exact numbers vary because the generator is random, but the pattern shows ho
 
 ## GitHub repository and submission
 
+This project is published in the repository below and is ready for submission:
+
+- Repository URL: https://github.com/Mirri007/ACIT4420_Assignment_1
+- Branch: main
+- Final commit hash: use the latest commit hash from the repository history at the time of submission
+
 Create a public repository or a private repository that is accessible to the instructor. Submit both the repository URL and the final commit hash representing the final assessed version.
 
 ## Required repository contents
 
-The repository should contain the project files and may use a different structure if explained in the README. The minimum expected structure is:
+The repository should contain the project files and may use a different structure if explained in the README. The final project structure for this submission is:
 
 ```text
-your-repository/
+ACIT4420_Assignment_1/
 ├── README.md
 ├── main.py
 ├── sample_data.py
 ├── tests.py
-└── requirements.txt
+├── requirements.txt
+├── option_a_fitness/
+│   ├── DATA_DESCRIPTION.md
+│   ├── data_generator.py
+│   ├── fitness_analyzer.py
+│   ├── fitness_runner.py
+│   └── test_fitness_analyzer.py
+└── .gitignore
 ```
 
 If no third-party packages are used, `requirements.txt` may be empty or may state that the project uses only the Python standard library.
 
+## How to run and verify the project
+
+From the project root:
+
+```bash
+cd /Users/mirijamthrondsen/Documents/GitHub/ACIT4420_Assignment_1
+python3 main.py
+```
+
+To run the automated tests:
+
+```bash
+cd /Users/mirijamthrondsen/Documents/GitHub/ACIT4420_Assignment_1
+python3 tests.py
+```
+
+This project uses only the Python standard library, so no package installation is required beyond Python itself.
+
 ## Final note
 
 The instructor-provided data generator should be treated as supplied code and should not be modified unless the assignment explicitly allows it. The required analysis logic should be implemented in the student's own classes and modules.
+
+This repository implements Option A only, in line with the assignment requirement to keep only the selected solution and remove the other assignment option from the final submission.
 
